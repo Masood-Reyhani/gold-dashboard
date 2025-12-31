@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="fa">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>داشبورد طلا (عیار | کهربا)</title>
+
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#d4af37">
+
+<style>
+body {
+    font-family: Tahoma, Arial;
+    direction: rtl;
+    background: #f2f2f2;
+    padding: 20px;
+}
+.card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 15px;
+    margin-bottom: 15px;
+    box-shadow: 0 4px 10px rgba(0,0,0,.1);
+}
+h2 { text-align: center; }
+.row { margin: 6px 0; }
+.value { font-weight: bold; }
+.good { color: green; }
+.bad { color: red; }
+button {
+    width: 100%;
+    padding: 10px;
+    border: none;
+    border-radius: 8px;
+    background: #d4af37;
+    font-size: 16px;
+}
+</style>
+</head>
+
+<body>
+
+<h2>📊 داشبورد آنلاین طلا</h2>
+
+<div class="card">
+    <div class="row">انس جهانی: <span class="value" id="ounce">...</span></div>
+    <div class="row">دلار آزاد: <span class="value" id="usd">...</span></div>
+    <div class="row">طلای ۲۴ عیار: <span class="value" id="gram24">...</span></div>
+</div>
+
+<div class="card">
+    <div class="row">عیار: <span class="value" id="ayar">...</span></div>
+    <div class="row">اختلاف با تئوریک: <span class="value" id="diffAyar"></span></div>
+</div>
+
+<div class="card">
+    <div class="row">کهربا: <span class="value" id="kah">...</span></div>
+    <div class="row">اختلاف با تئوریک: <span class="value" id="diffKah"></span></div>
+</div>
+
+<button onclick="loadAll()">🔄 بروزرسانی</button>
+
+<script>
+async function loadAll() {
+    try {
+        // انس
+        const g = await fetch("https://api.metals.live/v1/spot/gold");
+        const gold = (await g.json())[0].price;
+
+        // دلار
+        const d = await fetch("https://api.tgju.org/v1/market/price_dollar_rl");
+        const usd = parseFloat((await d.json()).p);
+
+        const gram24 = (gold * usd) / 31.103;
+
+        // عیار
+        const ayarRes = await fetch("https://cdn.tsetmc.com/api/ClosingPrice/GetClosingPriceInfo/69499645634120160");
+        const ayar = (await ayarRes.json()).closingPriceInfo.lastPrice;
+
+        // کهربا
+        const kahRes = await fetch("https://cdn.tsetmc.com/api/ClosingPrice/GetClosingPriceInfo/22787540174226034");
+        const kah = (await kahRes.json()).closingPriceInfo.lastPrice;
+
+        document.getElementById("ounce").innerText = gold + " $";
+        document.getElementById("usd").innerText = usd.toLocaleString("fa-IR");
+        document.getElementById("gram24").innerText = gram24.toLocaleString("fa-IR");
+
+        document.getElementById("ayar").innerText = ayar.toLocaleString("fa-IR");
+        document.getElementById("kah").innerText = kah.toLocaleString("fa-IR");
+
+        showDiff("diffAyar", ayar - gram24);
+        showDiff("diffKah", kah - gram24);
+
+    } catch {
+        alert("خطا در دریافت داده‌ها");
+    }
+}
+
+function showDiff(id, val) {
+    const el = document.getElementById(id);
+    el.innerText = val.toLocaleString("fa-IR");
+    el.className = val > 0 ? "value bad" : "value good";
+}
+
+loadAll();
+
+// PWA
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js');
+}
+</script>
+
+</body>
+</html>
